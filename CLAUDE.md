@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - **현재 버전:** 학생이 question-papers 폴더의 문제지를 목록에서 골라 풉니다(목록 → 문항 확인 → 풀이 → 결과). 학생 파일 업로드는 없습니다. 내 컴퓨터에서 실행해 확인했습니다.
 - **초기 버전:** 학생이 JSON 파일을 직접 업로드했습니다. Git 커밋 `caaa79a`에 있고, PRD.md 맨 아래 "지난 버전 기록"에 정리되어 있습니다. 현재 요구사항이 아니므로 업로드 기능을 되살리지 않습니다.
-- 배포는 아직 하지 않았고, 사용자가 따로 요청할 때만 합니다. Vercel이 연결되어 있어도 배포 도구를 실행하거나 임시 주소를 만들지 않습니다.
+- GitHub 공개 저장소에 올렸습니다(아래 "환경" 참고). 배포는 아직 하지 않았고, 사용자가 따로 요청할 때만 합니다. Vercel이 연결되어 있어도 배포 도구를 실행하거나 임시 주소를 만들지 않습니다.
 
 ## 앱을 만드는 기준
 
@@ -79,5 +79,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - Windows 11, PowerShell 5.1
 - Node.js v26.13.0, npm 11.20.0, Git 2.56.0. pnpm과 yarn도 설치되어 있지만 이 프로젝트는 npm을 사용합니다.
-- Git 커밋 작성자는 이 저장소에만 설정되어 있습니다(`git config --local`). 연결된 온라인 저장소는 없습니다.
+- Git 커밋 작성자는 이 저장소에만 설정되어 있습니다(`git config --local`).
+- GitHub: 공개 저장소 https://github.com/love1saypms/question-paper-quiz (`origin`, 기본 브랜치 `main`). GitHub CLI(`gh`, `C:\Program Files\GitHub CLI`)에 love1saypms로 로그인되어 있고 `git push`도 이 로그인을 씁니다. 공개 저장소라 문제지 정답과 커밋 이메일이 누구나 볼 수 있습니다. 커밋·올리기는 사용자가 요청할 때만 합니다.
+- GitHub 저장소에는 자동 배포 연결이 없습니다. 나중에 Vercel과 연결하면 올릴 때마다 배포될 수 있으니, 그 뒤로는 올리기 전에 사용자에게 알립니다.
 - 배포 대상은 Vercel입니다. 배포 방식(Vercel CLI 또는 GitHub 저장소 연결)은 아직 정하지 않았습니다.
