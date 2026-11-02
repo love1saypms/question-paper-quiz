@@ -1,20 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import type { Answer, Question } from "@/lib/quiz/types";
+import type { Answer, QuestionPaper } from "@/lib/quiz/types";
 import { gradeQuiz } from "@/lib/quiz/score";
-import UploadScreen from "./UploadScreen";
+import PaperListScreen from "./PaperListScreen";
 import ConfirmScreen from "./ConfirmScreen";
 import QuestionScreen from "./QuestionScreen";
 import ResultScreen from "./ResultScreen";
 
-type Step = "upload" | "confirm" | "quiz" | "result";
+type Step = "list" | "confirm" | "quiz" | "result";
+
+type Props = {
+  papers: QuestionPaper[];
+};
 
 // 화면 단계와 고른 답은 이 브라우저 화면 안에서만 기억합니다. 새로고침하면 처음부터 시작합니다.
-export default function QuizApp() {
-  const [step, setStep] = useState<Step>("upload");
-  const [fileName, setFileName] = useState("");
-  const [questions, setQuestions] = useState<Question[]>([]);
+export default function QuizApp({ papers }: Props) {
+  const [step, setStep] = useState<Step>("list");
+  const [paper, setPaper] = useState<QuestionPaper | null>(null);
   const [answers, setAnswers] = useState<Answer[]>([]);
   const [current, setCurrent] = useState(0);
 
@@ -23,18 +26,25 @@ export default function QuizApp() {
     window.scrollTo({ top: 0 });
   }
 
+  function backToList() {
+    setPaper(null);
+    setAnswers([]);
+    goTo("list");
+  }
+
   function startQuiz() {
-    setAnswers(questions.map(() => null));
+    if (!paper) return;
+    setAnswers(paper.questions.map(() => null));
     setCurrent(0);
     goTo("quiz");
   }
 
-  if (step === "upload") {
+  if (step === "list" || !paper) {
     return (
-      <UploadScreen
-        onLoaded={(name, loaded) => {
-          setFileName(name);
-          setQuestions(loaded);
+      <PaperListScreen
+        papers={papers}
+        onSelect={(selected) => {
+          setPaper(selected);
           goTo("confirm");
         }}
       />
@@ -42,13 +52,15 @@ export default function QuizApp() {
   }
 
   if (step === "confirm") {
-    return <ConfirmScreen fileName={fileName} count={questions.length} onStart={startQuiz} />;
+    return (
+      <ConfirmScreen title={paper.title} count={paper.questions.length} onStart={startQuiz} onBack={backToList} />
+    );
   }
 
   if (step === "quiz") {
     return (
       <QuestionScreen
-        questions={questions}
+        questions={paper.questions}
         answers={answers}
         current={current}
         onChoose={(choice) => setAnswers((prev) => prev.map((a, i) => (i === current ? choice : a)))}
@@ -63,13 +75,10 @@ export default function QuizApp() {
 
   return (
     <ResultScreen
-      result={gradeQuiz(questions, answers)}
+      title={paper.title}
+      result={gradeQuiz(paper.questions, answers)}
       onRetry={startQuiz}
-      onNewFile={() => {
-        setQuestions([]);
-        setAnswers([]);
-        goTo("upload");
-      }}
+      onBackToList={backToList}
     />
   );
 }

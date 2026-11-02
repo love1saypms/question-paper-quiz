@@ -2,9 +2,10 @@ import type { QuizResult } from "@/lib/quiz/score";
 import type { Answer, Question } from "@/lib/quiz/types";
 
 type Props = {
+  title: string;
   result: QuizResult;
   onRetry: () => void;
-  onNewFile: () => void;
+  onBackToList: () => void;
 };
 
 function optionText(question: Question, choice: Answer) {
@@ -12,10 +13,13 @@ function optionText(question: Question, choice: Answer) {
   return `${choice}번. ${question.options[choice - 1]}`;
 }
 
-export default function ResultScreen({ result, onRetry, onNewFile }: Props) {
+export default function ResultScreen({ title, result, onRetry, onBackToList }: Props) {
   return (
     <section className="space-y-6">
-      <h1 className="text-2xl font-bold sm:text-3xl">결과</h1>
+      <header className="space-y-1">
+        <h1 className="text-2xl font-bold sm:text-3xl">결과</h1>
+        <p className="text-slate-600">{title}</p>
+      </header>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
         <p className="text-sm text-slate-500">총점</p>
@@ -70,10 +74,10 @@ export default function ResultScreen({ result, onRetry, onNewFile }: Props) {
         </button>
         <button
           type="button"
-          onClick={onNewFile}
+          onClick={onBackToList}
           className="min-h-12 rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold hover:bg-slate-50"
         >
-          새 파일 업로드
+          문제지 목록으로
         </button>
       </div>
     </section>

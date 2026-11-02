@@ -12,38 +12,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 현재 상태
 
-1일차 앱(업로드 → 문항 확인 → 풀이 → 결과)을 만들었고 내 컴퓨터에서 실행해 확인했습니다. 배포는 아직 하지 않았고, 사용자가 따로 요청할 때만 합니다. Git 저장소가 아닙니다.
-
-## 명령 (PowerShell)
-
-- `npm run dev`: 개발용 실행, http://localhost:3000. 내장 브라우저로 볼 때는 `.claude/launch.json`의 `quiz-app` 설정을 씁니다.
-- `npm test`: 문제 파일 검사·채점 시험(`tests/*.test.mts`, Node 내장 테스트 도구). 하나만 돌리려면 `node --test --test-name-pattern "점수" "tests/*.test.mts"`
-- `npm run lint`, `npm run build`
-- Node 설치 전에 열린 터미널에서는 `node`·`npm`을 못 찾을 수 있습니다. 새로 열거나 `$env:PATH = [Environment]::GetEnvironmentVariable('PATH','Machine') + ';' + [Environment]::GetEnvironmentVariable('PATH','User')`를 먼저 실행합니다.
-
-## 구조
-
-- Next.js 16.4 (App Router, Turbopack, `cacheComponents` 켜짐) + Tailwind 4. 이 버전은 예전과 다른 점이 있으니 코드를 쓰기 전에 [AGENTS.md](AGENTS.md) 안내대로 `node_modules/next/dist/docs/`를 확인합니다.
-- `lib/quiz/`: 화면과 분리된 규칙. `validate.ts`(파일 검사, 오류 문구), `score.ts`(채점·점수 반올림), `types.ts`. 2일차에 문제를 다른 곳에서 받아와도 그대로 재사용하도록 화면 코드에 의존하지 않습니다. 시험이 Node에서 TypeScript를 직접 읽으므로 이 폴더 안에서는 값 import 없이 `import type`만 씁니다.
-- `components/QuizApp.tsx`: 단계(upload/confirm/quiz/result)와 고른 답을 기억하는 유일한 곳. 나머지 화면 컴포넌트는 받은 값만 그립니다. 저장소에 저장하지 않으므로 새로고침하면 처음부터 시작합니다.
-- `public/sample-questions.json`: 최상위 `sample-questions.json`의 복사본으로, "예시 파일 받기" 다운로드 링크에만 씁니다. 앱 코드가 이 파일을 읽으면 안 됩니다.
+- **현재 버전:** 학생이 question-papers 폴더의 문제지를 목록에서 골라 풉니다(목록 → 문항 확인 → 풀이 → 결과). 학생 파일 업로드는 없습니다. 내 컴퓨터에서 실행해 확인했습니다.
+- **초기 버전:** 학생이 JSON 파일을 직접 업로드했습니다. Git 커밋 `caaa79a`에 있고, PRD.md 맨 아래 "지난 버전 기록"에 정리되어 있습니다. 현재 요구사항이 아니므로 업로드 기능을 되살리지 않습니다.
+- 배포는 아직 하지 않았고, 사용자가 따로 요청할 때만 합니다. Vercel이 연결되어 있어도 배포 도구를 실행하거나 임시 주소를 만들지 않습니다.
 
 ## 앱을 만드는 기준
 
-- [PRD.md](PRD.md)에 적힌 요구사항을 기준으로 작업합니다. "결정 사항" 섹션은 요구사항 확인 단계에서 사용자와 정한 세부 규칙입니다.
+- [PRD.md](PRD.md)에 적힌 요구사항을 기준으로 작업합니다. "결정 사항" 섹션은 사용자와 정한 세부 규칙입니다.
 - 지금 만들 기능(1일차)과 나중에 추가할 기능(2일차)을 구분합니다. 1일차에는 2일차를 고려해 확장할 수 있게 구성하되, 2일차 기능을 미리 만들지 않습니다.
 - 정해진 조건을 마음대로 바꾸거나 요청하지 않은 기능을 추가하지 않습니다.
 - 정해지지 않은 내용이나 선택이 필요한 사항은 먼저 질문합니다.
 - 기존 파일 내용과 PRD.md가 서로 다르면 임의로 정하지 말고 사용자에게 알립니다. PRD.md 안에서 원래 요구사항과 "결정 사항"이 다르게 읽히는 경우도 같습니다.
 - 아직 확인할 수 없는 내용은 추측해서 채우지 않습니다.
+- 확인을 위해 임의의 문제지나 문항을 question-papers에 추가하지 않습니다.
 
 ## 놓치기 쉬운 요구사항
 
 - `correctAnswer`는 1부터 시작하는 번호입니다. `options` 배열 인덱스는 0부터 시작하므로 비교할 때 변환해야 합니다.
 - 풀이 중에는 정답 여부·점수·해설을 화면에 내보내지 않습니다. 채점은 모든 문항에 답한 뒤 한 번에 합니다.
-- 업로드 파일에 오류가 하나라도 있으면 파일 전체를 거부하고 문항 번호와 이유를 보여줍니다. 일부 문항만 건너뛰지 않습니다.
+- 문제지 제목과 문항을 화면 코드에 고정하지 않고, question-papers의 각 JSON 파일(title, questions)에서 읽습니다. 목록은 파일 이름 순입니다.
+- 형식이 틀린 문제지는 학생 목록에서 빼고 `npm test`가 파일 이름과 이유를 알려줍니다. 학생 화면에는 오류를 보여주지 않습니다.
 - 점수는 `정답 수 ÷ 전체 문항 수 × 100`을 소수 첫째 자리까지 반올림합니다.
-- 예시 문항을 앱에 고정해 보여주는 것만으로는 완료가 아닙니다. 이용자가 직접 JSON 파일을 업로드해 풀 수 있어야 합니다.
+- 원본 JSON 접근을 막거나 정답을 숨기는 보호 기능은 넣지 않습니다(사용자 결정).
 - 앱 화면의 안내 문구와 오류 메시지는 일반인이 이해할 수 있는 쉬운 한국어로 씁니다.
 
 ## 설명하는 방법
@@ -69,8 +59,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 사용자 컴퓨터의 화면을 마우스·키보드로 조작하지 않습니다. 명령을 실행해 파일을 만들고 앱을 실행·확인하는 일은 해도 됩니다.
 - 계정 로그인(Vercel, GitHub, Google 등)은 사용자가 직접 합니다.
 
+## 명령 (PowerShell)
+
+- `npm run dev`: 개발용 실행, http://localhost:3000. 내장 브라우저로 볼 때는 `.claude/launch.json`의 `quiz-app` 설정을 씁니다.
+- `npm test`: 실제 question-papers 폴더의 모든 문제지 검사와 검사·채점 규칙 시험(`tests/*.test.mts`, Node 내장 테스트 도구). 하나만 돌리려면 `node --test --test-name-pattern "점수" "tests/*.test.mts"`
+- `npm run lint`, `npm run build`
+- Node 설치 전에 열린 터미널에서는 `node`·`npm`을 못 찾을 수 있습니다. 새로 열거나 `$env:PATH = [Environment]::GetEnvironmentVariable('PATH','Machine') + ';' + [Environment]::GetEnvironmentVariable('PATH','User')`를 먼저 실행합니다.
+
+## 구조
+
+- Next.js 16.4 (App Router, Turbopack, `cacheComponents` 켜짐) + Tailwind 4. 이 버전은 예전과 다른 점이 있으니 코드를 쓰기 전에 [AGENTS.md](AGENTS.md) 안내대로 `node_modules/next/dist/docs/`를 확인합니다.
+- `question-papers/*.json`: 문제지 파일. `lib/papers.ts`의 `loadPapers()`가 `app/page.tsx`(서버 컴포넌트)에서 동기 방식(`readdirSync`/`readFileSync`)으로 읽습니다. 그래서 `npm run build` 때 목록이 화면에 미리 들어갑니다. 문제지를 추가·수정하면 개발 실행에서는 새로고침으로 보이지만, 배포본에는 다시 빌드해야 반영됩니다.
+  - 폴더 경로는 `path.join(process.cwd(), "question-papers", ...)`처럼 매번 그대로 적습니다. 변수로 넘기면 빌드가 "프로젝트 전체를 배포 묶음에 넣는다"는 경고를 냅니다.
+- `lib/quiz/`: 화면과 분리된 규칙. `validate.ts`(문제지 검사, 오류 문구), `score.ts`(채점·점수 반올림), `types.ts`. 2일차에 문제를 다른 곳(DB 등)에서 받아와도 그대로 재사용하도록 화면 코드에 의존하지 않습니다.
+- 시험이 Node에서 TypeScript를 직접 읽으므로, `lib/` 안에서 다른 파일의 값을 import할 때는 `./quiz/validate.ts`처럼 `.ts` 확장자를 붙이고(`tsconfig`의 `allowImportingTsExtensions`), 타입만 쓸 때는 `import type`을 씁니다.
+- `components/QuizApp.tsx`: 단계(list/confirm/quiz/result), 선택한 문제지, 고른 답을 기억하는 유일한 곳. 나머지 화면 컴포넌트는 받은 값만 그립니다. 저장하지 않으므로 새로고침하면 처음부터 시작합니다.
+
 ## 환경
 
 - Windows 11, PowerShell 5.1
 - Node.js v26.13.0, npm 11.20.0, Git 2.56.0. pnpm과 yarn도 설치되어 있지만 이 프로젝트는 npm을 사용합니다.
+- Git 커밋 작성자는 이 저장소에만 설정되어 있습니다(`git config --local`). 연결된 온라인 저장소는 없습니다.
 - 배포 대상은 Vercel입니다. 배포 방식(Vercel CLI 또는 GitHub 저장소 연결)은 아직 정하지 않았습니다.

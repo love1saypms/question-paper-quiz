@@ -1,21 +1,13 @@
 import type { Question } from "./types";
 
-export const MAX_FILE_BYTES = 1024 * 1024;
 export const MAX_QUESTIONS = 200;
 export const OPTION_COUNT = 4;
 
 export type ParseResult =
-  | { ok: true; questions: Question[] }
+  | { ok: true; title: string; questions: Question[] }
   | { ok: false; errors: string[] };
 
-export function checkFileSize(bytes: number): string | null {
-  if (bytes > MAX_FILE_BYTES) {
-    return "파일이 너무 큽니다. 1MB 이하의 파일만 올릴 수 있습니다.";
-  }
-  return null;
-}
-
-export function parseQuizText(text: string): ParseResult {
+export function parsePaperText(text: string): ParseResult {
   let data: unknown;
   try {
     data = JSON.parse(text);
@@ -25,33 +17,38 @@ export function parseQuizText(text: string): ParseResult {
       errors: ["파일 내용을 읽을 수 없습니다. JSON 형식에 맞게 작성되었는지 확인해주세요."],
     };
   }
-  return validateQuizData(data);
+  return validatePaperData(data);
 }
 
-// 오류가 하나라도 있으면 파일 전체를 거부합니다. 일부 문항만 건너뛰지 않습니다.
-export function validateQuizData(data: unknown): ParseResult {
-  if (!isRecord(data) || !Array.isArray(data.questions)) {
-    return { ok: false, errors: ["파일에 문항 목록(questions)이 없습니다."] };
+// 오류가 하나라도 있으면 문제지 전체를 거부합니다. 일부 문항만 건너뛰지 않습니다.
+export function validatePaperData(data: unknown): ParseResult {
+  if (!isRecord(data)) {
+    return { ok: false, errors: ["문제지 형식이 올바르지 않습니다."] };
+  }
+
+  const errors: string[] = [];
+  if (!isFilledString(data.title)) {
+    errors.push("문제지 제목(title)이 비어 있습니다.");
+  }
+
+  if (!Array.isArray(data.questions)) {
+    errors.push("문항 목록(questions)이 없습니다.");
+    return { ok: false, errors };
   }
 
   const items: unknown[] = data.questions;
   if (items.length === 0) {
-    return { ok: false, errors: ["문항 목록(questions)에 문항이 하나도 없습니다."] };
-  }
-  if (items.length > MAX_QUESTIONS) {
-    return {
-      ok: false,
-      errors: [`문항은 ${MAX_QUESTIONS}개까지만 올릴 수 있습니다. 이 파일에는 ${items.length}개가 있습니다.`],
-    };
+    errors.push("문항 목록(questions)에 문항이 하나도 없습니다.");
+  } else if (items.length > MAX_QUESTIONS) {
+    errors.push(`문항은 ${MAX_QUESTIONS}개까지만 넣을 수 있습니다. 이 파일에는 ${items.length}개가 있습니다.`);
+  } else {
+    items.forEach((item, i) => errors.push(...checkQuestion(item, i + 1)));
   }
 
-  const errors: string[] = [];
-  items.forEach((item, i) => errors.push(...checkQuestion(item, i + 1)));
   if (errors.length > 0) {
     return { ok: false, errors };
   }
-
-  return { ok: true, questions: items as Question[] };
+  return { ok: true, title: data.title as string, questions: items as Question[] };
 }
 
 function checkQuestion(item: unknown, n: number): string[] {
